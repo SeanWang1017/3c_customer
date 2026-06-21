@@ -1,0 +1,113 @@
+{
+  "name": "3C客服-工单转人工通知",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ticket-created",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "7343e25a-e7e1-4f47-a4e9-0e343545454c",
+      "name": "Webhook",
+      "webhookId": "76581078-1fd5-4212-b222-c44147f47092"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d3b00f70-c76d-40a0-82cd-e880eda4423a",
+              "name": "subject",
+              "value": "=[3C客服-转人工]：{{ $json.body.ticket_id }}\n用户：{{ $json.body.user_id }}",
+              "type": "string"
+            },
+            {
+              "id": "9470564b-164e-412b-a1ce-cb5f2b86a490",
+              "name": "body",
+              "value": "=您好，以下是新转人工的工单详情，请您介入处理：\n工单号：{{ $json.body.ticket_id }}\n用户ID：{{ $json.body.user_id }}\n关联订单：{{ $json.body.order_id || \"（用户未提及）\" }}\n创建时间：{{ $json.body.created_at }}\n【用户最新诉求】：{{ $json.body.user_query }}\n【对话历史】：{{ $json.body.conversation_history }}\n\n请登录客服工作台跟进！\n\n3C 电商智能客服 Agent 系统\n",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        208,
+        0
+      ],
+      "id": "44771592-b93d-491d-b25d-9f2538585a5e",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "fromEmail": "<请填写发件邮箱，例如 your_sender@163.com>",
+        "toEmail": "<请填写客服收件邮箱，例如 cs_team@example.com>",
+        "subject": "={{ $json.subject }}",
+        "emailFormat": "text",
+        "text": "={{ $json.body }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        416,
+        0
+      ],
+      "id": "061b61be-fe31-488c-8ec5-56036ac8db1b",
+      "name": "Send email",
+      "webhookId": "100a2459-2572-4f1f-b5bb-ec61a4d067a4",
+      "credentials": {
+        "smtp": {
+          "id": "REPLACE_WITH_YOUR_SMTP_CREDENTIAL_ID",
+          "name": "163 SMTP account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Send email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false,
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "versionId": "0afc7612-7faf-4a95-9b5f-ddf988f876be",
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "id": "REPLACE_AFTER_IMPORT",
+  "tags": []
+}

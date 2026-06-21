@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>3C 智能客服工作台</title>
+<!-- marked.js 用于把 LLM 返回的 markdown 渲染成 HTML（**粗体**、列表等） -->
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<style>
+  /* ===== 全局 ===== */
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", sans-serif;
+    background: #f5f7fa;
+    color: #2c3e50;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  /* ===== 顶部 ===== */
+  header {
+    background: #2c3e50;
+    color: #fff;
+    padding: 12px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  header h1 { font-size: 18px; font-weight: 500; }
+  header .thread-pill {
+    background: #34495e;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-family: monospace;
+  }
+
+  /* ===== 主体三栏 ===== */
+  .container {
+    display: grid;
+    grid-template-columns: 1fr 2fr 1fr;
+    height: calc(100vh - 50px);
+  }
+
+  /* 客户视图栏（最左，只展示真正发给客户的对话） */
+  .customer-panel {
+    display: flex;
+    flex-direction: column;
+    background: #f5f7fa;
+    border-right: 1px solid #e0e6ed;
+    min-width: 0;     /* grid item 防 overflow */
+    min-height: 0;    /* 让内部 flex:1 + overflow-y 生效（防内容撑开） */
+  }
+  .customer-header {
+    padding: 12px 16px;
+    background: #ecf0f1;
+    border-bottom: 1px solid #d5dbdb;
+  }
+  .customer-header h2 {
+    font-size: 14px;
+    color: #2c3e50;
+    margin: 0;
+  }
+  .customer-header .sub {
+    font-size: 10px;
+    color: #7f8c8d;
+    margin-top: 2px;
+  }
+  .customer-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+  }
+  .customer-messages .empty {
+    text-align: center;
+    color: #b0bec5;
+    font-size: 12px;
+    padding: 40px 8px;
+  }
+  /* 客户视图里的消息气泡（与工作台样式略有区分） */
+  .cv-msg {
+    margin-bottom: 12px;
+    display: flex;
+  }
+  .cv-msg.customer-says { justify-content: flex-end; }
+  .cv-msg.service-says { justify-content: flex-start; }
+  .cv-bubble {
+    max-width: 85%;
+    padding: 8px 12px;
+    border-radius: 10px;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  .cv-msg.customer-says .cv-bubble {
+    background: #3498db;
+    color: #fff;
+  }
+  .cv-msg.service-says .cv-bubble {
+    background: #fff;
+    color: #2c3e50;
+    border: 1px solid #d5dbdb;
+  }
+  .cv-bubble .who {
+    font-size: 10px;
+    opacity: 0.7;
+    margin-bottom: 3px;
+  }
+  /* 客户视图栏底部输入框（与中栏样式区分） */
+  .customer-input {
+    display: flex;
+    gap: 6px;
+    padding: 10px;
+    background: #ecf0f1;
+    border-top: 1px solid #d5dbdb;
+  }
+  .customer-input input {
+    flex: 1;
+    padding: 8px 10px;
+    font-size: 13px;
+    border: 1px solid #c0c5cc;
+    border-radius: 4px;
+    box-sizing: border-box;
+  }
+  .customer-input button {
+    padding: 8px 14px;
+    background: #3498db;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .customer-input button:hover { background: #2980b9; }
+  .customer-input button:disabled {
+    background: #bdc3c7;
+    cursor: not-allowed;
+  }
+  /* 工作台底部"客服直接发言"输入框（在原 chat-input 下方再加一个） */
+  .service-input {
+    display: flex;
+    gap: 6px;
+    padding: 10px 16px;
+    background: #fef9e7;
+    border-top: 1px dashed #f39c12;
+  }
+  .service-input .label {
+    font-size: 11px;
+    color: #b9770e;
+    font-weight: 600;
+    align-self: center;
+    white-space: nowrap;
+  }
+  .service-input input {
+    flex: 1;
+    padding: 8px 10px;
+    font-size: 13px;
+    border: 1px solid #f39c12;
+    border-radius: 4px;
+    box-sizing: border-box;
+  }
+  .service-input button {
+    padding: 8px 14px;
+    background: #f39c12;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .service-input button:hover { background: #d68910; }
+
+  /* 左：对话栏 */
+  .chat-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: #fff;
+    border-right: 1px solid #e0e6ed;
+    min-width: 0;     /* grid item 防 overflow */
+    min-height: 0;    /* 让内部 flex:1 + overflow-y 生效（防内容撑开） */
+  }
+  .chat-header {
+    padding: 16px 24px;
+    border-bottom: 1px solid #e0e6ed;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .chat-header h2 { font-size: 15px; color: #34495e; }
+  .demo-btn {
+    background: #ecf0f1;
+    border: 1px solid #bdc3c7;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    color: #2c3e50;
+  }
+  .demo-btn:hover { background: #d5dbdb; }
+
+  .chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px 24px;
+  }
+  .message {
+    margin-bottom: 16px;
+    display: flex;
+    animation: fadeIn 0.3s;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .message.assistant { justify-content: flex-end; }
+  .bubble-wrapper {
+    display: flex;
+    flex-direction: column;
+    width: 100%;                    /* 强制撑满 max-width 限制 */
+    max-width: 70%;
+    min-width: 0;
+  }
+  .message.user .bubble-wrapper .role,
+  .message.user .bubble-wrapper .bubble { align-self: flex-start; }     /* 客户（user）：靠左（"对方"）*/
+  .message.assistant .bubble-wrapper .role,
+  .message.assistant .bubble-wrapper .bubble { align-self: flex-end; }   /* 客服（assistant/AI 草拟）：靠右（"我方"）*/
+  .message .bubble {
+    max-width: 100%;                /* 撑满 wrapper（wrapper 自己 70% 限宽）*/
+    padding: 12px 16px;
+    border-radius: 12px;
+    line-height: 1.6;
+    font-size: 14px;
+    white-space: pre-line;
+    word-break: normal;            /* 中文短词不打断 */
+    overflow-wrap: anywhere;        /* 超长 URL 才断 */
+  }
+  .message.user .bubble {
+    background: #ecf0f1;            /* 客户：浅灰，"对方"语气 */
+    color: #2c3e50;
+  }
+  .message.assistant .bubble {
+    background: #3498db;            /* 客服 AI：蓝色，"我方"语气 */
+    color: #fff;
+  }
+  .message .role {
+    font-size: 11px;
+    color: #7f8c8d;
+    margin-bottom: 4px;
+  }
+  .message.assistant .role { text-align: right; }
+
+  /* 审核区 */
+  .review-box {
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin-top: 8px;
+    display: none;
+  }
+  .review-box.show { display: block; }
+  .review-box .review-label {
+    font-size: 12px;
+    color: #856404;
+    margin-bottom: 6px;
+  }
+  .review-btns { display: flex; gap: 8px; }
+  .review-btns button {
+    padding: 6px 12px;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+    font-size: 12px;
+  }
+  .btn-approve { background: #27ae60; color: #fff; }
+  .btn-approve:hover { background: #229954; }
+  .btn-reject { background: #e74c3c; color: #fff; }
+  .btn-reject:hover { background: #c0392b; }
+  .review-result {
+    font-size: 12px;
+    color: #27ae60;
+    margin-top: 6px;
+  }
+  /* 输入区 */
+  .chat-input {
+    border-top: 1px solid #e0e6ed;
+    padding: 12px 16px;
+    display: flex;
+    gap: 8px;
+  }
+  .chat-input input {
+    flex: 1;
+    padding: 10px 14px;
+    border: 1px solid #bdc3c7;
+    border-radius: 6px;
+    font-size: 14px;
+    outline: none;
+  }
+  .chat-input input:focus { border-color: #3498db; }
+  .chat-input input:disabled { background: #f5f5f5; }
+  .chat-input button {
+    padding: 10px 20px;
+    background: #3498db;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+  }
+  .chat-input button:hover:not(:disabled) { background: #2980b9; }
+  .chat-input button:disabled { background: #95a5a6; cursor: not-allowed; }
+
+  /* 右：决策栏 */
+  .decision-panel {
+    background: #fafbfc;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    min-width: 0;     /* grid item 防 overflow */
+    min-height: 0;    /* grid item 防 overflow（决策窗本身也要能滚） */
+  }
+  .decision-header {
+    padding: 16px 20px;
+    background: #fff;
+    border-bottom: 1px solid #e0e6ed;
+  }
+  .decision-header h2 { font-size: 15px; color: #34495e; }
+  .decision-header .sub { font-size: 11px; color: #95a5a6; margin-top: 2px; }
+  .decision-content { padding: 16px 20px; }
+  .stage-card {
+    background: #fff;
+    border: 1px solid #e0e6ed;
+    border-radius: 8px;
+    padding: 12px 14px;
+    margin-bottom: 12px;
+    opacity: 0.4;
+    transition: all 0.3s;
+  }
+  .stage-card.active {
+    opacity: 1;
+    border-color: #3498db;
+    box-shadow: 0 2px 8px rgba(52, 152, 219, 0.1);
+  }
+  .stage-card .stage-title {
+    font-size: 12px;
+    color: #7f8c8d;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .stage-card .stage-title .num {
+    background: #95a5a6;
+    color: #fff;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 600;
+  }
+  .stage-card.active .stage-title .num { background: #3498db; }
+  .stage-card .stage-body {
+    font-size: 13px;
+    line-height: 1.6;
+    color: #2c3e50;
+    font-family: monospace;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+  }
+  .stage-card .stage-body .label { color: #7f8c8d; }
+  .stage-card .stage-body .value { color: #2c3e50; font-weight: 500; }
+  .stage-card .stage-body .l2-tag {
+    display: inline-block;
+    background: #f39c12;
+    color: #fff;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    margin-top: 4px;
+  }
+  .stage-card .stage-body code {
+    background: #ecf0f1;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 12px;
+  }
+
+  /* Loading 状态 */
+  .loading::after {
+    content: "▍";
+    animation: blink 1s infinite;
+    color: #3498db;
+  }
+  @keyframes blink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🛍️ 3C 智能客服工作台</h1>
+  <div>会话 ID: <span class="thread-pill" id="threadDisplay">（生成中...）</span></div>
+</header>
+
+<div class="container">
+  <!-- 最左：客户视图（只展示真正发送给客户的对话） -->
+  <div class="customer-panel">
+    <div class="customer-header">
+      <h2>📱 客户视角</h2>
+      <div class="sub">客户在 IM 中看到的对话（仅审核通过的回复）</div>
+    </div>
+    <div class="customer-messages" id="customerMessages">
+      <div class="empty">客户尚未提问</div>
+    </div>
+    <div class="customer-input">
+      <input
+        type="text"
+        id="customerInput"
+        placeholder="客户输入消息（按 Enter 发送）"
+        onkeydown="if(event.key==='Enter') sendCustomerMessage()"
+      />
+      <button id="customerSendBtn" onclick="sendCustomerMessage()">发送</button>
+    </div>
+  </div>
+
+  <!-- 中：客服工作台（含 AI 草拟 + 审核） -->
+  <div class="chat-panel">
+    <div class="chat-header">
+      <h2>🧑‍💼 客服工作台（AI 草拟 + 人工审核）</h2>
+      <div>
+        <button class="demo-btn" onclick="clearChat()">🗑 清空会话</button>
+      </div>
+    </div>
+
+    <div class="chat-messages" id="chatMessages">
+      <div style="text-align: center; color: #95a5a6; padding: 40px 20px; font-size: 13px;">
+        欢迎使用 3C 智能客服工作台<br>
+        在下方输入框<b>模拟客户提问</b>，AI 会草拟回复供您审核
+      </div>
+    </div>
+
+    <div class="service-input">
+      <span class="label">👤 客服手动回复：</span>
+      <input
+        type="text"
+        id="serviceInput"
+        placeholder="驳回 AI 回复后请在此手动回复，按 Enter 直接发给客户"
+        onkeydown="if(event.key==='Enter') sendServiceMessage()"
+      />
+      <button id="serviceSendBtn" onclick="sendServiceMessage()">发送</button>
+    </div>
+  </div>
+
+  <!-- 右：决策栏 -->
+  <div class="decision-panel">
+    <div class="decision-header">
+      <h2>🧠 智能体决策</h2>
+      <div class="sub">实时展示 4 阶段推理过程</div>
+    </div>
+
+    <div class="decision-content" id="decisionContent">
+      <div class="stage-card" id="stage1">
+        <div class="stage-title"><span class="num">1</span> 用户输入</div>
+        <div class="stage-body" id="stage1Body">
+          <span style="color:#95a5a6;">等待对话开始...</span>
+        </div>
+      </div>
+
+      <div class="stage-card" id="stage2">
+        <div class="stage-title"><span class="num">2</span> 意图识别（第 1 重 + 第 2 重保险）</div>
+        <div class="stage-body" id="stage2Body">
+          <span style="color:#95a5a6;">未触发</span>
+        </div>
+      </div>
+
+      <div class="stage-card" id="stage3">
+        <div class="stage-title"><span class="num">3</span> 智能体决策（工具调用）</div>
+        <div class="stage-body" id="stage3Body">
+          <span style="color:#95a5a6;">未触发</span>
+        </div>
+      </div>
+
+      <div class="stage-card" id="stage4">
+        <div class="stage-title"><span class="num">4</span> 结果输出</div>
+        <div class="stage-body" id="stage4Body">
+          <span style="color:#95a5a6;">等待 AI 回复...</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ====== 工具：生成唯一会话 ID ======
+  // 格式：user_<时间戳后8位>_<12位随机>，例如 user_71235836_ab3cd8f9e1d2
+  // 长度 25 位足够防重，每次刷新页面 / 清空会话都换新 ID
+  function genThreadId() {
+    const ts = Date.now().toString(36).slice(-8);
+    const rand = Array.from(crypto.getRandomValues(new Uint8Array(6)))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
+    return `user_${ts}_${rand}`;
+  }
+
+  // ====== 全局状态 ======
+  const chatMessages = document.getElementById('chatMessages');
+  const customerMessages = document.getElementById('customerMessages');
+  const threadDisplay = document.getElementById('threadDisplay');
+  let currentThread = genThreadId();
+  threadDisplay.textContent = currentThread;
+  let currentReply = '';
+  let isStreaming = false;
+
+  // ====== 客户视角主动发消息（左栏输入框）======
+  // 客户消息：进左栏 + 中栏 + 触发 AI 草拟流程
+  window.sendCustomerMessage = function() {
+    const input = document.getElementById('customerInput');
+    const q = input.value.trim();
+    if (!q) return;
+    input.value = '';
+    sendMessage(q);
+  };
+
+  // ====== 客服直接发言（中栏底部黄色输入框）======
+  // 绕过 AI，直接把客服的话推到客户视角 + 中栏聊天记录
+  window.sendServiceMessage = function() {
+    const input = document.getElementById('serviceInput');
+    const text = input.value.trim();
+    if (!text) return;
+    input.value = '';
+    // 中栏追加一条"客服直接发言"气泡
+    const manualBubble = document.createElement('div');
+    manualBubble.className = 'msg ai';
+    manualBubble.innerHTML = `
+      <div class="bubble" style="background:#fff3cd; border-left:3px solid #f39c12;">
+        <div style="font-size:11px;color:#b9770e;margin-bottom:4px;">👤 客服直接发言（未经 AI）</div>
+        ${marked.parse(text)}
+      </div>
+    `;
+    chatMessages.appendChild(manualBubble);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+    // 同步推送到左侧客户视角
+    appendToCustomerView('service', text, true);
+  };
+  function appendToCustomerView(role, content, isMarkdown = false) {
+    // role: "customer" = 客户说的（右气泡蓝色）； "service" = 客服发出的（左气泡白色）
+    const bodyHtml = isMarkdown ? marked.parse(content) : escapeHtml(content);
+    appendToCustomerViewHTML(role, bodyHtml);
+  }
+  function appendToCustomerViewHTML(role, bodyHtml) {
+    // 直接接收已渲染的 HTML 字符串（approve 路径用：把 AI 气泡的 innerHTML 原样拷贝过来）
+    const empty = customerMessages.querySelector('.empty');
+    if (empty) empty.remove();
+
+    const msg = document.createElement('div');
+    msg.className = 'cv-msg ' + (role === 'customer' ? 'customer-says' : 'service-says');
+    const who = role === 'customer' ? '客户' : '客服';
+    msg.innerHTML = `
+      <div class="cv-bubble">
+        <div class="who">${who}</div>
+        ${bodyHtml}
+      </div>
+    `;
+    customerMessages.appendChild(msg);
+    customerMessages.scrollTop = customerMessages.scrollHeight;
+  }
+
+  // ====== 工具：阶段卡片激活 ======
+  function activateStage(stageNum) {
+    for (let i = 1; i <= 4; i++) {
+      const card = document.getElementById('stage' + i);
+      if (i <= stageNum) card.classList.add('active');
+      else card.classList.remove('active');
+    }
+  }
+
+  function resetStages() {
+    for (let i = 1; i <= 4; i++) {
+      document.getElementById('stage' + i).classList.remove('active');
+    }
+    document.getElementById('stage1Body').innerHTML = '<span style="color:#95a5a6;">等待对话开始...</span>';
+    document.getElementById('stage2Body').innerHTML = '<span style="color:#95a5a6;">未触发</span>';
+    document.getElementById('stage3Body').innerHTML = '<span style="color:#95a5a6;">未触发</span>';
+    document.getElementById('stage4Body').innerHTML = '<span style="color:#95a5a6;">等待 AI 回复...</span>';
+  }
+
+  // ====== 工具：消息气泡 ======
+  function appendMessage(role, content, isMarkdown = false) {
+    // 第一次发消息前，删欢迎语
+    if (chatMessages.querySelector('div[style*="text-align: center"]')) {
+      chatMessages.innerHTML = '';
+    }
+    const div = document.createElement('div');
+    div.className = 'message ' + role;
+    const roleName = role === 'user' ? '客户' : '客服';
+    // 用户消息纯文本，AI 回复渲染 markdown
+    const body = isMarkdown
+      ? marked.parse(content)
+      : escapeHtml(content);
+    div.innerHTML = `
+      <div class="bubble-wrapper">
+        <div class="role">${roleName}</div>
+        <div class="bubble">${body}</div>
+      </div>
+    `;
+    chatMessages.appendChild(div);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+    return div;
+  }
+
+  function escapeHtml(s) {
+    return s.replace(/[&<>"']/g, c => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[c]));
+  }
+
+  // ====== 工具：添加审核框 ======
+  function appendReviewBox(replyBubble) {
+    const box = document.createElement('div');
+    box.className = 'review-box show';
+    box.innerHTML = `
+      <div class="review-label">📋 第 4 重保险 客服审核（演示用）</div>
+      <div class="review-btns">
+        <button class="btn-approve" onclick="approve(this)">✅ 确认发送</button>
+        <button class="btn-reject" onclick="reject(this)">❌ 驳回</button>
+      </div>
+      <div class="review-result"></div>
+    `;
+    replyBubble.appendChild(box);
+  }
+
+  window.approve = function(btn) {
+    // ⚠️ 必须先取 reviewBox 和 aiBubble，再改 DOM —— 否则 btn 被 innerHTML 替换后脱离 DOM tree，closest() 会返回 null
+    const reviewBox = btn.closest('.review-box');
+    const aiBubble = reviewBox ? reviewBox.parentElement.querySelector('.bubble') : null;
+
+    const resultDiv = btn.parentElement.nextElementSibling;
+    resultDiv.textContent = '✅ 已确认发送给客户';
+    btn.parentElement.innerHTML = '<span style="color:#27ae60;font-size:12px;">已确认 ✓</span>';
+
+    // 把已确认的 AI 回复推到左侧客户视图
+    // 直接读 aiBubble.innerHTML（marked 已渲染），不依赖全局 currentReply（连续多条会串台）
+    if (aiBubble) {
+      appendToCustomerViewHTML('service', aiBubble.innerHTML);
+    }
+  };
+
+  window.reject = function(btn) {
+    // 1) AI 回复气泡加删除线 + 半透明，明确标记"未发送给客户"
+    const reviewBox = btn.closest('.review-box');
+    const aiBubble = reviewBox.parentElement.querySelector('.bubble') || reviewBox.previousElementSibling;
+    if (aiBubble) {
+      aiBubble.style.textDecoration = 'line-through';
+      aiBubble.style.opacity = '0.55';
+      aiBubble.title = '此条 AI 回复已被客服驳回，未发送给客户';
+    }
+    // 2) 审核框折叠为提示语，引导客服去底部的"客服手动回复"输入框
+    reviewBox.innerHTML = `
+      <span style="color:#e74c3c;font-size:12px;font-weight:600;">❌ 已驳回 AI 回复</span>
+      <span style="color:#7f8c8d;font-size:11px;margin-left:8px;">请在下方"客服手动回复"输入框中输入回复内容</span>
+    `;
+    // 3) 焦点直接落到底部输入框
+    const serviceInput = document.getElementById('serviceInput');
+    if (serviceInput) serviceInput.focus();
+  };
+
+  // ====== SSE 流式接收 ======
+  // query 由调用方传入（sendCustomerMessage 从左栏 customerInput 取值）
+  async function sendMessage(query) {
+    if (isStreaming) return;
+    query = (query || '').trim();
+    if (!query) return;
+
+    // 用户消息
+    appendMessage('user', query);
+    appendToCustomerView('customer', query);
+    isStreaming = true;
+    const customerSendBtn = document.getElementById('customerSendBtn');
+    const customerInput = document.getElementById('customerInput');
+    if (customerSendBtn) customerSendBtn.disabled = true;
+    if (customerInput) customerInput.disabled = true;
+
+    // 重置决策面板
+    resetStages();
+    currentReply = '';
+
+    // 添加占位 AI 消息（流式更新）
+    const aiDiv = appendMessage('assistant', '');
+    const aiBubble = aiDiv.querySelector('.bubble');
+    aiBubble.classList.add('loading');
+
+    try {
+      // 打开 SSE 流
+      const response = await fetch('/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          query: query,
+          thread_id: currentThread,
+        }),
+      });
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+
+        // 按 \n\n 切分 SSE 事件
+        const events = buffer.split('\n\n');
+        buffer = events.pop() || '';  // 保留不完整的最后一段
+
+        for (const evt of events) {
+          const line = evt.trim();
+          if (!line.startsWith('data: ')) continue;
+          const json = line.slice(6);
+          try {
+            const data = JSON.parse(json);
+            handleStage(data, aiBubble);
+          } catch (e) {
+            console.error('SSE parse error:', e, json);
+          }
+        }
+      }
+    } catch (err) {
+      aiBubble.textContent = '❌ 错误: ' + err.message;
+    } finally {
+      aiBubble.classList.remove('loading');
+      isStreaming = false;
+      const customerSendBtn = document.getElementById('customerSendBtn');
+      const customerInput = document.getElementById('customerInput');
+      if (customerSendBtn) customerSendBtn.disabled = false;
+      if (customerInput) {
+        customerInput.disabled = false;
+        customerInput.focus();
+      }
+    }
+  }
+
+  function handleStage(data, aiBubble) {
+    switch (data.stage) {
+      case 'input':
+        activateStage(1);
+        document.getElementById('stage1Body').innerHTML = `
+          <span class="label">thread_id:</span> <code>${escapeHtml(data.thread_id)}</code><br>
+          <span class="label">用户问题:</span> <span class="value">${escapeHtml(data.user)}</span>
+        `;
+        break;
+
+      case 'intent':
+        activateStage(2);
+        let l2Tag = '';
+        if (data.was_changed) {
+          l2Tag = `<br><span class="l2-tag">第 2 重改判: ${escapeHtml(data.reason)}</span>`;
+        }
+        document.getElementById('stage2Body').innerHTML = `
+          <span class="label">intent:</span> <span class="value">${escapeHtml(data.intent || 'None')}</span><br>
+          <span class="label">confidence:</span> <span class="value">${data.conf.toFixed(3)}</span><br>
+          <span class="label">路由工具:</span> <code>${escapeHtml(data.tool)}</code>${l2Tag}
+        `;
+        break;
+
+      case 'tool_call':
+        activateStage(3);
+        const argsStr = JSON.stringify(data.args, null, 2);
+        document.getElementById('stage3Body').innerHTML = `
+          <span class="label">工具:</span> <code>${escapeHtml(data.tool)}</code><br>
+          <span class="label">参数:</span><br><pre style="margin: 4px 0; padding: 6px; background: #f8f9fa; border-radius: 4px; font-size: 11px;">${escapeHtml(argsStr)}</pre>
+        `;
+        break;
+
+      case 'tool_result':
+        const stage3Body = document.getElementById('stage3Body');
+        const existing = stage3Body.innerHTML;
+        stage3Body.innerHTML = existing + `<br><span class="label">返回数据:</span><br><pre style="margin: 4px 0; padding: 6px; background: #f8f9fa; border-radius: 4px; font-size: 11px; max-height: 150px; overflow-y: auto;">${escapeHtml(data.content)}</pre>`;
+        break;
+
+      case 'decision':
+        // 转人工分支：跳过 LLM 直调 create_ticket
+        activateStage(3);
+        const notifiedBadge = data.notified
+          ? '<span style="color:#27ae60;font-weight:600;">✅ 已送达</span>'
+          : '<span style="color:#e67e22;font-weight:600;">⚠️ 仅本地落库</span>';
+        const orderRow = data.order_id
+          ? `<br><span class="label">关联订单:</span> <code>${escapeHtml(data.order_id)}</code>`
+          : '';
+        document.getElementById('stage3Body').innerHTML = `
+          <span class="label">决策:</span> <span class="value">${escapeHtml(data.summary || '转人工')}</span><br>
+          <span class="label">工单ID:</span> <code>${escapeHtml(data.ticket_id || '?')}</code><br>
+          <span class="label">n8n 通知:</span> ${notifiedBadge}${orderRow}
+        `;
+        break;
+
+      case 'reply':
+        currentReply = data.content;
+        // 客服回复：AI 输出的 markdown 格式，渲染成 HTML
+        aiBubble.innerHTML = marked.parse(data.content);
+        aiBubble.classList.remove('loading');
+        activateStage(4);
+        document.getElementById('stage4Body').innerHTML = `
+          <span class="label">客服回复:</span><br>
+          <div style="margin-top: 4px; padding: 8px; background: #e8f5e9; border-left: 3px solid #27ae60; border-radius: 4px;">
+            ${marked.parse(data.content)}
+          </div>
+        `;
+        break;
+
+      case 'review_required':
+        // 在 AI 消息后追加审核框
+        const wrapper = aiBubble.parentElement;
+        appendReviewBox(wrapper);
+        break;
+
+      case 'done':
+        // 流结束
+        break;
+
+      case 'error':
+        aiBubble.textContent = '❌ ' + data.message;
+        break;
+    }
+  }
+
+  // ====== 清空会话 ======
+  function clearChat() {
+    chatMessages.innerHTML = `
+      <div style="text-align: center; color: #95a5a6; padding: 40px 20px; font-size: 13px;">
+        欢迎使用 3C 智能客服工作台<br>
+        在下方输入框<b>模拟客户提问</b>，AI 会草拟回复供您审核
+      </div>
+    `;
+    customerMessages.innerHTML = '<div class="empty">客户尚未提问</div>';
+    // 清空两个额外输入框
+    const serviceInput = document.getElementById('serviceInput');
+    const customerInput = document.getElementById('customerInput');
+    if (serviceInput) serviceInput.value = '';
+    if (customerInput) customerInput.value = '';
+    resetStages();
+    // 切到新 thread（长 ID 防重）
+    currentThread = genThreadId();
+    threadDisplay.textContent = currentThread;
+  }
+</script>
+
+</body>
+</html>

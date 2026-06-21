@@ -1,0 +1,85 @@
+# ========== Python ==========
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+__pypackages__/
+
+# ========== 虚拟环境 ==========
+.venv/
+venv/
+env/
+.conda/
+
+# ========== 环境变量（含 API Key）==========
+.env
+.env.local
+
+# ========== 模型文件（太大，可从 HuggingFace/ModelScope 重新下载）==========
+# Qwen2.5-0.5B 基模 (954MB)
+models/Qwen2.5-0.5B/
+# 历史 LoRA（保险起见）
+models/qwen2.5-3b-lora/
+# BGE 中文 embedding (92MB)
+models/embeddings/
+
+# ========== LoRA 训练输出 ==========
+# checkpoint 太大（每个 112MB），保留训练参数和日志小文件
+saves/**/checkpoint-*/
+saves/**/running_log.txt
+
+# ========== 数据缓存（可重建）==========
+hf_cache/
+llamaboard_cache/
+pip_cache/
+# FAISS 索引可重建：python src/rag/build_index.py
+data/vector_store/
+# 原始数据可从 ModelScope 重新下载
+data/raw/
+# 运行时生成的工单数据（每跑一次都会变）
+data/orders/tickets.json
+
+# ========== 评测报告（自动生成）==========
+reports/
+
+# ========== 测试 / 代码质量工具缓存 ==========
+.pytest_cache/
+.coverage
+htmlcov/
+.ruff_cache/
+.mypy_cache/
+
+# ========== Jupyter ==========
+.ipynb_checkpoints/
+
+# ========== 数据备份 ==========
+*.bak
+
+# ========== IDE ==========
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ========== 操作系统 ==========
+.DS_Store
+Thumbs.db
+
+# ========== 日志 ==========
+*.log
+
+# ========== 第三方工具 session metadata ==========
+.workbuddy/
+.omo/
+
+# ========== Claude Code 与内部规划（不对外）==========
+.claude
+CLAUDE.md
+PROJECT_PLAN.md
+
+# ========== 答辩材料 & 个人作业文档（不对外）==========
+*.pptx
+毕业项目需求文档*

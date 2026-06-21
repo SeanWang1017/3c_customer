@@ -1,0 +1,210 @@
+[
+  {
+    "order_id": "JD20240610001",
+    "user_id": "user_001",
+    "product_name": "雷蛇战锤狂鲨V3有线入耳式耳塞",
+    "product_category": "Earphone",
+    "price": 339.0,
+    "quantity": 1,
+    "order_time": "2026-06-08 14:30:00",
+    "status": "已签收",
+    "shipping_address": "北京市朝阳区建国路88号",
+    "logistics": {
+      "company": "京东物流",
+      "tracking_no": "JD123456001",
+      "updates": [
+        {"time": "2026-06-08 18:00:00", "desc": "订单已提交"},
+        {"time": "2026-06-08 20:00:00", "desc": "商品已出库"},
+        {"time": "2026-06-09 08:00:00", "desc": "已到达北京分拣中心"},
+        {"time": "2026-06-09 14:00:00", "desc": "配送中"},
+        {"time": "2026-06-09 16:30:00", "desc": "已签收，签收人：本人"}
+      ]
+    }
+  },
+  {
+    "order_id": "JD20240610002",
+    "user_id": "user_001",
+    "product_name": "AMD 锐龙迷你主机R7-7840HS",
+    "product_category": "Computer",
+    "price": 2999.0,
+    "quantity": 1,
+    "order_time": "2026-06-09 09:15:00",
+    "status": "配送中",
+    "shipping_address": "北京市朝阳区建国路88号",
+    "logistics": {
+      "company": "京东物流",
+      "tracking_no": "JD123456002",
+      "updates": [
+        {"time": "2026-06-09 10:00:00", "desc": "订单已提交"},
+        {"time": "2026-06-09 15:00:00", "desc": "商品已出库"},
+        {"time": "2026-06-10 06:00:00", "desc": "已到达北京分拣中心"},
+        {"time": "2026-06-10 10:00:00", "desc": "配送中"}
+      ]
+    }
+  },
+  {
+    "order_id": "JD20240610003",
+    "user_id": "user_001",
+    "product_name": "华为MatePad 11英寸平板电脑",
+    "product_category": "Computer",
+    "price": 2799.0,
+    "quantity": 1,
+    "order_time": "2026-06-07 20:00:00",
+    "status": "已发货",
+    "shipping_address": "北京市朝阳区建国路88号",
+    "logistics": {
+      "company": "顺丰速运",
+      "tracking_no": "SF987654321",
+      "updates": [
+        {"time": "2026-06-07 21:00:00", "desc": "订单已提交"},
+        {"time": "2026-06-08 10:00:00", "desc": "商品已出库"},
+        {"time": "2026-06-09 22:00:00", "desc": "已到达广州中转站"}
+      ]
+    }
+  },
+  {
+    "order_id": "JD20240610004",
+    "user_id": "user_002",
+    "product_name": "Apple AirPods Pro 2",
+    "product_category": "Earphone",
+    "price": 1799.0,
+    "quantity": 1,
+    "order_time": "2026-06-06 11:30:00",
+    "status": "已签收",
+    "shipping_address": "上海市浦东新区张江高科技园区",
+    "logistics": {
+      "company": "京东物流",
+      "tracking_no": "JD123456003",
+      "updates": [
+        {"time": "2026-06-06 12:00:00", "desc": "订单已提交"},
+        {"time": "2026-06-06 18:00:00", "desc": "商品已出库"},
+        {"time": "2026-06-07 08:00:00", "desc": "已到达上海分拣中心"},
+        {"time": "2026-06-07 10:00:00", "desc": "配送中"},
+        {"time": "2026-06-07 14:00:00", "desc": "已签收，签收人：前台"}
+      ]
+    }
+  },
+  {
+    "order_id": "JD20240610005",
+    "user_id": "user_002",
+    "product_name": "罗技G502 X PLUS 无线游戏鼠标",
+    "product_category": "Mouse_Keyboard",
+    "price": 499.0,
+    "quantity": 1,
+    "order_time": "2026-06-05 16:45:00",
+    "status": "已签收",
+    "shipping_address": "上海市浦东新区张江高科技园区",
+    "logistics": {
+      "company": "中通快递",
+      "tracking_no": "ZT555555555",
+      "updates": [
+        {"time": "2026-06-05 17:00:00", "desc": "订单已提交"},
+        {"time": "2026-06-06 09:00:00", "desc": "商品已出库"},
+        {"time": "2026-06-07 12:00:00", "desc": "已到达上海分拣中心"},
+        {"time": "2026-06-07 15:00:00", "desc": "配送中"},
+        {"time": "2026-06-07 17:30:00", "desc": "已签收，签收人：本人"}
+      ]
+    }
+  },
+  {
+    "order_id": "JD20240610006",
+    "user_id": "user_003",
+    "product_name": "索尼WH-1000XM5 头戴式降噪耳机",
+    "product_category": "Earphone",
+    "price": 2499.0,
+    "quantity": 1,
+    "order_time": "2026-06-10 08:00:00",
+    "status": "待发货",
+    "shipping_address": "广东省深圳市南山区科技园",
+    "logistics": {
+      "company": "京东物流",
+      "tracking_no": "",
+      "updates": [
+        {"time": "2026-06-10 08:00:00", "desc": "订单已提交，等待商家发货"}
+      ]
+    }
+  },
+  {
+    "order_id": "JD20240610007",
+    "user_id": "user_003",
+    "product_name": "佳能EOS R50 微单相机",
+    "product_category": "Camera",
+    "price": 5599.0,
+    "quantity": 1,
+    "order_time": "2026-06-04 10:00:00",
+    "status": "已签收",
+    "shipping_address": "广东省深圳市南山区科技园",
+    "logistics": {
+      "company": "顺丰速运",
+      "tracking_no": "SF111111111",
+      "updates": [
+        {"time": "2026-06-04 11:00:00", "desc": "订单已提交"},
+        {"time": "2026-06-04 18:00:00", "desc": "商品已出库"},
+        {"time": "2026-06-05 14:00:00", "desc": "已到达深圳分拣中心"},
+        {"time": "2026-06-05 16:00:00", "desc": "配送中"},
+        {"time": "2026-06-05 18:30:00", "desc": "已签收，签收人：本人"}
+      ]
+    }
+  },
+  {
+    "order_id": "JD20240610008",
+    "user_id": "user_004",
+    "product_name": "小米手环8 Pro",
+    "product_category": "Smart_Watch",
+    "price": 399.0,
+    "quantity": 2,
+    "order_time": "2026-06-09 14:00:00",
+    "status": "已发货",
+    "shipping_address": "浙江省杭州市西湖区文三路",
+    "logistics": {
+      "company": "京东物流",
+      "tracking_no": "JD123456004",
+      "updates": [
+        {"time": "2026-06-09 14:30:00", "desc": "订单已提交"},
+        {"time": "2026-06-09 20:00:00", "desc": "商品已出库"},
+        {"time": "2026-06-10 09:00:00", "desc": "已到达杭州分拣中心"}
+      ]
+    }
+  },
+  {
+    "order_id": "JD20240610009",
+    "user_id": "user_004",
+    "product_name": "漫步者M230 便携蓝牙音箱",
+    "product_category": "Speaker",
+    "price": 379.0,
+    "quantity": 1,
+    "order_time": "2026-06-10 09:00:00",
+    "status": "待付款",
+    "shipping_address": "浙江省杭州市西湖区文三路",
+    "logistics": {
+      "company": "",
+      "tracking_no": "",
+      "updates": [
+        {"time": "2026-06-10 09:00:00", "desc": "订单已创建，待付款"}
+      ]
+    }
+  },
+  {
+    "order_id": "JD20240610010",
+    "user_id": "user_005",
+    "product_name": "联想ThinkPad X1 Carbon Gen 11",
+    "product_category": "Computer",
+    "price": 10999.0,
+    "quantity": 1,
+    "order_time": "2026-06-03 15:20:00",
+    "status": "已完成",
+    "shipping_address": "四川省成都市高新区天府大道",
+    "logistics": {
+      "company": "京东物流",
+      "tracking_no": "JD123456005",
+      "updates": [
+        {"time": "2026-06-03 16:00:00", "desc": "订单已提交"},
+        {"time": "2026-06-03 22:00:00", "desc": "商品已出库"},
+        {"time": "2026-06-04 12:00:00", "desc": "已到达成都分拣中心"},
+        {"time": "2026-06-04 15:00:00", "desc": "配送中"},
+        {"time": "2026-06-04 18:00:00", "desc": "已签收，签收人：本人"},
+        {"time": "2026-06-10 10:00:00", "desc": "订单已完成"}
+      ]
+    }
+  }
+]

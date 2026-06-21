@@ -1,0 +1,29 @@
+{
+  "customer_service_intent_train": {
+    "file_name": "intent_classify_train.jsonl",
+    "formatting": "alpaca",
+    "columns": {
+      "prompt": "instruction",
+      "query": "input",
+      "response": "output"
+    }
+  },
+  "customer_service_intent_val": {
+    "file_name": "intent_classify_val.jsonl",
+    "formatting": "alpaca",
+    "columns": {
+      "prompt": "instruction",
+      "query": "input",
+      "response": "output"
+    }
+  },
+  "customer_service_intent_test": {
+    "file_name": "intent_classify_test.jsonl",
+    "formatting": "alpaca",
+    "columns": {
+      "prompt": "instruction",
+      "query": "input",
+      "response": "output"
+    }
+  }
+}

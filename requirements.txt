@@ -1,0 +1,41 @@
+# =============================================================
+# 3C 电商智能客服 Agent 系统 — 依赖清单（GPU 部署版）
+# Python: 3.12（conda graph 环境实测 3.12.13）
+# CUDA:   12.8（torch 2.11.0+cu128，匹配 Docker 镜像 nvidia/cuda:12.8.0）
+# 注意：本项目强依赖 GPU（QLoRA int4 微调 + 推理），不提供 CPU fallback
+# =============================================================
+
+# --- 模型推理（GPU）---
+torch>=2.0.0                          # Docker 镜像内重装 torch+cu128
+transformers>=4.40.0
+peft>=0.11.0                          # QLoRA adapter 加载
+bitsandbytes>=0.43.0                  # int4 量化推理（必需 GPU）
+
+# --- LangChain 框架 + Agent 编排 ---
+langchain>=0.3.0
+langchain-community>=0.3.0
+langchain-huggingface>=0.1.0
+langchain-openai>=0.2.0
+langgraph>=0.2.0                      # S5 Agent 编排 + InMemorySaver 多轮记忆
+
+# --- 向量检索（RAG）---
+faiss-cpu>=1.8.0
+sentence-transformers>=3.0.0          # BGE-small-zh-v1.5 embedding
+
+# --- Web 后端（S6 FastAPI 工作台）---
+fastapi>=0.115.0
+uvicorn[standard]>=0.30.0             # ASGI server
+sse-starlette>=2.1.0                  # SSE 4 阶段流式
+
+# --- LLM API ---
+openai>=1.30.0                        # 阿里云百炼 qwen-flash 走 openai 兼容协议
+
+# --- 数据处理 ---
+pandas>=2.0.0
+openpyxl>=3.0.0                       # xlsx 读取（preprocess_xlsx 单独子进程避 segfault）
+python-dotenv>=1.0.0
+
+# --- 工具 ---
+requests>=2.31.0
+tqdm>=4.66.0
+numpy>=1.24.0
