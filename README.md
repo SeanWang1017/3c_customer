@@ -24,7 +24,7 @@
 | RAG | FAISS + BGE-small-zh-v1.5 |
 | 前端 | FastAPI + SSE |
 | 训练 | LLaMA Factory |
-| 工单通知（可选）| n8n + 163 SMTP（转人工时自动邮件升级）|
+| 工单通知 | n8n + 163 SMTP（转人工时自动邮件升级）|
 
 ## 项目结构
 
